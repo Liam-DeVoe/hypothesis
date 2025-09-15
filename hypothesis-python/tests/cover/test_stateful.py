@@ -46,6 +46,7 @@ from hypothesis.strategies import binary, data, integers, just, lists
 from tests.common.utils import (
     Why,
     capture_out,
+    skipif_threading,
     validate_deprecation,
     xfail_on_crosshair,
 )
@@ -432,6 +433,7 @@ def test_runner_that_checks_factory_produced_a_machine():
         run_state_machine_as_test(object)
 
 
+@skipif_threading
 def test_settings_attribute_is_validated():
     real_settings = FailsEventually.TestCase.settings
     try:
