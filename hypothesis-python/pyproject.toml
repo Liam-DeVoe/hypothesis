@@ -1,11 +1,90 @@
 [build-system]
-# require a recent setuptools for `license = ` support
-requires = ["setuptools >= 78.1.0", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+path = "src/hypothesis/version.py"
+
+[tool.hatch.build.targets.wheel.hooks.mypyc]
+# mypyc compilation notes:
+# - HATCH_BUILD_HOOK_ENABLE_MYPYC=1 pip install -e hypothesis-python
+#   to install a mypyc-compiled build of hypothesis
+# - I've found
+#   find . -type f -name "*.so" -exec rm {} \;
+#   useful to clean up a mypyc build. These files persist even after
+#   reinstalling without HATCH_BUILD_HOOK_ENABLE_MYPYC.
+
+# this hook only runs if HATCH_BUILD_HOOK_ENABLE_MYPYC is set.
+# see https://hatch.pypa.io/latest/config/build/#environment-variables
+enable-by-default = false
+dependencies = [
+    "hatch-mypyc>=0.16.0",
+]
+# these packages are required to type-check correctly
+require-runtime-dependencies = true
+require-runtime-features = ["all"]
+# copied from the root pyproject.toml. We'd like to direct mypyc to that file instead
+# with --config-file=pyproject.toml (possibly with a fixed path?), but that's blocked
+# on https://github.com/ofek/hatch-mypyc/issues/37.
+mypy-args = [
+    "--allow-redefinition",
+    "--disallow-untyped-decorators",
+    "--disallow-incomplete-defs",
+    "--no-implicit-optional",
+    "--no-implicit-reexport",
+    "--ignore-missing-imports",
+    "--strict-equality",
+    "--warn-no-return",
+    "--warn-unused-ignores",
+    "--warn-unused-configs",
+    "--warn-redundant-casts",
+    "--follow-imports=silent",
+]
+# the defaults are:
+# - debug_level = "1"
+# - opt_level = "3"
+#
+# debug_level is 1 if debug information is included in the build, and
+# opt_level is 0 for no optimization and 3 for all optimizations. I believe this
+# corresponds to the gcc -O level.
+options = { debug_level = "0", opt_level = "3" }
+include = [
+    # conjecture
+    # ==========
+    "src/hypothesis/internal/conjecture/choice.py",
+    # "src/hypothesis/internal/conjecture/datatree.py",
+    # "src/hypothesis/internal/conjecture/floats.py",
+    # "src/hypothesis/internal/conjecture/junkdrawer.py",
+    # "src/hypothesis/internal/conjecture/optimiser.py",
+    # "src/hypothesis/internal/conjecture/pareto.py",
+    # "src/hypothesis/internal/conjecture/utils.py",
+    # "src/hypothesis/internal/conjecture/shrinker.py", # fatal compilation error
+    # "src/hypothesis/internal/conjecture/engine.py",
+    # "src/hypothesis/internal/conjecture/data.py",
+    # strategies
+    # ==========
+    # "src/hypothesis/strategies/_internal/strings.py",  # too many interconnected subclasses
+    # "src/hypothesis/strategies/_internal/strategies.py",  # too many interconnected subclasses
+    # internal
+    # ========
+    # "src/hypothesis/internal/cathetus.py",
+    # "src/hypothesis/internal/charmap.py",
+    # "src/hypothesis/internal/compat.py", # issue with dynamic definition via sys.version_info
+    # "src/hypothesis/internal/coverage.py", # issue with duplicate definition of check_function / etc
+    # "src/hypothesis/internal/detection.py",
+    # "src/hypothesis/internal/entropy.py", # weird error on line 30 KeyError: <TypeInfo hypothesis.internal.entropy.RandomLike>
+    # "src/hypothesis/internal/escalation.py",
+    # "src/hypothesis/internal/floats.py",
+    # "src/hypothesis/internal/intervalsets.py",
+    # "src/hypothesis/internal/validation.py",
+    # "src/hypothesis/internal/cache.py",
+    # other
+    # =====
+    # "src/hypothesis/database.py"  # metaclass issues (?)
+]
 
 [project]
 name = "hypothesis"
-# see [tool.setuptools.dynamic]
 dynamic = ["version"]
 authors = [
     { name = "David R. MacIver and Zac Hatfield-Dodds", email = "david@drmaciver.com" }
@@ -123,9 +202,6 @@ watchdog = ["watchdog>=4.0.0"]
 # Avoid changing this by hand. This is automatically updated by update_changelog_and_version
 all = ["black>=20.8b0", "click>=7.0", "crosshair-tool>=0.0.95", "django>=4.2", "dpcontracts>=0.4", "hypothesis-crosshair>=0.0.25", "lark>=0.10.1", "libcst>=0.3.16", "numpy>=1.19.3", "pandas>=1.1", "pytest>=4.6", "python-dateutil>=1.4", "pytz>=2014.1", "redis>=3.0.0", "rich>=9.0.0", "tzdata>=2025.2; sys_platform == 'win32' or sys_platform == 'emscripten'", "watchdog>=4.0.0"]
 
-[tool.setuptools.dynamic]
-version = {attr = "hypothesis.version.__version__"}
-
 [tool.setuptools.package-data]
 hypothesis = ["vendor/tlds-alpha-by-domain.txt"]
 
@@ -134,3 +210,9 @@ hypothesis = "hypothesis.extra.cli:main"
 
 [project.entry-points.pytest11]
 hypothesispytest = "_hypothesis_pytestplugin"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/hypothesis"]
+force-include = { "src/_hypothesis_pytestplugin.py" = "_hypothesis_pytestplugin.py", "src/_hypothesis_globals.py" = "_hypothesis_globals.py", "src/_hypothesis_ftz_detector.py" = "_hypothesis_ftz_detector.py" }
+# TODO test that this really is included when using hatch
+include = ["src/hypothesis/vendor/tlds-alpha-by-domain.txt"]

@@ -125,7 +125,7 @@ def update_changelog_and_version():
         beginning = beginning.replace(old, f"Hypothesis {major}.x")
         rest = "\n".join([old, len(old) * "=", "", rest])
 
-    rm.replace_assignment(VERSION_FILE, "__version_info__", repr(new_version_info))
+    rm.replace_assignment(VERSION_FILE, "__version__", repr(__version__))
 
     heading_for_new_version = f"{new_version_string} - {rm.release_date_string()}"
     border_for_new_version = "-" * len(heading_for_new_version)

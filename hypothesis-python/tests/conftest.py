@@ -30,7 +30,7 @@ from hypothesis.internal.conjecture import junkdrawer
 
 from tests.common import TIME_INCREMENT
 from tests.common.setup import run
-from tests.common.utils import raises_warning
+from tests.common.utils import compiled_with_mypyc, raises_warning
 
 run()
 
@@ -216,7 +216,7 @@ independent_random = random.Random()
 
 
 @pytest.hookimpl(hookwrapper=True)
-def pytest_runtest_call(item):
+def pytest_runtest_call(item: pytest.Item):
     if item.config.getoption("--hypothesis-benchmark-shrinks"):
         yield from _benchmark_shrinks(item)
         # ideally benchmark shrinking would not be mutually exclusive with the
@@ -224,6 +224,21 @@ def pytest_runtest_call(item):
         # and in practice they will error in normal tests before one runs a
         # benchmark.
         return
+
+    if compiled_with_mypyc:
+        # get fixtures directly requested by this test (not the transitive closure of
+        # fixtures, to avoid false positives).
+        fixture_names = item._request._fixturemanager.getfixtureinfo(
+            node=item, func=item.function, cls=None
+        ).argnames
+        if "monkeypatch" in fixture_names:
+            # not all uses of the monkeypatch fixture are incompatible with mypyc.
+            # just ones that try to monkeypatch a compiled attribute. But that's common
+            # enough that it's worth skipping.
+            pytest.skip(
+                "uses monkeypatch fixture, which is very likely incompatible with mypyc"
+            )
+
     # This hookwrapper checks for PRNG state leaks from Hypothesis tests.
     # See: https://github.com/HypothesisWorks/hypothesis/issues/1919
     if (
