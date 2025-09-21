@@ -9,4 +9,4 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 __version__ = "6.139.2"
-__version_info__ = tuple(map(int, __version__.split(".")))
+__version_info__ = tuple(map(int, __version__.split(".")))  # noqa: RUF048

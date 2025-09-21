@@ -199,7 +199,20 @@ def changelog():
 def build_distribution():
     if os.path.exists(DIST):
         shutil.rmtree(DIST)
+    # build both a source distribution and a plain wheel
     subprocess.check_output([sys.executable, "-m", "build", "--outdir", DIST])
+    # also build a mypyc-compiled wheel
+    subprocess.check_output(
+        [
+            "HATCH_BUILD_HOOK_ENABLE_MYPYC=1",
+            sys.executable,
+            "-m",
+            "build",
+            "--wheel",
+            "--outdir",
+            DIST,
+        ]
+    )
 
 
 def upload_distribution():

@@ -39,6 +39,13 @@ mypy-args = [
     "--warn-unused-configs",
     "--warn-redundant-casts",
     "--follow-imports=silent",
+    # Even if our codebase passes cleanly on the python_version set in [tool.mypy],
+    # mypyc may still error on other python versions.
+    #
+    # I thought --python-version=3.10 (our base mypy python_version at time of writing)
+    # would fix this, but it didn't seem to help.
+    "--disable-error-code=unused-ignore",
+    "--disable-error-code=attr-defined",
 ]
 # the defaults are:
 # - debug_level = "1"
@@ -214,5 +221,8 @@ hypothesispytest = "_hypothesis_pytestplugin"
 [tool.hatch.build.targets.wheel]
 packages = ["src/hypothesis"]
 force-include = { "src/_hypothesis_pytestplugin.py" = "_hypothesis_pytestplugin.py", "src/_hypothesis_globals.py" = "_hypothesis_globals.py", "src/_hypothesis_ftz_detector.py" = "_hypothesis_ftz_detector.py" }
-# TODO test that this really is included when using hatch
 include = ["src/hypothesis/vendor/tlds-alpha-by-domain.txt"]
+# from mypyc builds. I think hatch ignores this by default since it's in our gitignore, so we have to re-include
+# it with `arficats`. Moving this pattern to `include` didn't work. I don't fully understand the difference
+# between `artifacts` and `include`.
+artifacts = ["**/*__mypyc*.so"]
