@@ -18,6 +18,7 @@ from io import StringIO
 from threading import Barrier, Lock, RLock, Thread
 from types import SimpleNamespace
 
+import hypothesis
 from hypothesis import Phase, settings
 from hypothesis.errors import HypothesisDeprecationWarning
 from hypothesis.internal import observability
@@ -61,6 +62,12 @@ except ModuleNotFoundError:
             ) from None
 
 
+# Consider ourselves compiled iff choice.py is compiled.
+#
+# I wish mypyc exposed a better way than checking the file extension, but that's
+# how mypy itself does it:
+# https://github.com/python/mypy/blob/c9d4c61d9c80b02279d1fcc9ca8a1974717b5e1c/mypy/main.py#L529
+compiled_with_mypyc = not hypothesis.internal.conjecture.choice.__file__.endswith(".py")
 try:
     from pytest import mark
 except ModuleNotFoundError:
@@ -68,10 +75,17 @@ except ModuleNotFoundError:
     def skipif_emscripten(f):
         return f
 
+    def skipif_mypyc(f):
+        return f
+
 else:
     skipif_emscripten = mark.skipif(
         sys.platform == "emscripten",
         reason="threads, processes, etc. are not available in the browser",
+    )
+    skipif_mypyc = mark.skipif(
+        compiled_with_mypyc,
+        reason="monkeypatching and other dynamic trickery is not available when under mypyc",
     )
 
 
