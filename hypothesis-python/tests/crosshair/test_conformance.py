@@ -14,7 +14,11 @@ from hypothesis_crosshair_provider.crosshair_provider import CrossHairPrimitiveP
 from hypothesis import settings, strategies as st
 from hypothesis.internal.conjecture.provider_conformance import run_conformance_test
 
+from tests.common.utils import skipif_mypyc
 
+
+# the conformance test's choice_permitted(symbolic) is an error under mypyc
+@skipif_mypyc
 def test_provider_conformance_crosshair():
     # Hypothesis can in theory pass values of any type to `realize`,
     # but the default strategy in the conformance test here acts too much like a

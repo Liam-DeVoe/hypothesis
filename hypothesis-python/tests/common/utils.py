@@ -62,7 +62,12 @@ except ModuleNotFoundError:
             ) from None
 
 
-compiled_with_mypyc = not hypothesis.internal.conjecture.data.__file__.endswith(".py")
+# Consider ourselves compiled iff choice.py is compiled.
+#
+# I wish mypyc exposed a better way than checking the file extension, but that's
+# how mypy itself does it:
+# https://github.com/python/mypy/blob/c9d4c61d9c80b02279d1fcc9ca8a1974717b5e1c/mypy/main.py#L529
+compiled_with_mypyc = not hypothesis.internal.conjecture.choice.__file__.endswith(".py")
 try:
     from pytest import mark
 except ModuleNotFoundError:
@@ -79,11 +84,6 @@ else:
         reason="threads, processes, etc. are not available in the browser",
     )
     skipif_mypyc = mark.skipif(
-        # Consider ourselves compiled iff data.py is compiled.
-        #
-        # I wish mypyc exposed a better way than checking the file extension, but that's
-        # how mypy itself does it:
-        # https://github.com/python/mypy/blob/c9d4c61d9c80b02279d1fcc9ca8a1974717b5e1c/mypy/main.py#L529
         compiled_with_mypyc,
         reason="monkeypatching and other dynamic trickery is not available when under mypyc",
     )
