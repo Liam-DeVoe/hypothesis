@@ -76,6 +76,7 @@ def run():
     if "crosshair" in AVAILABLE_PROVIDERS:
         settings.register_profile(
             "crosshair",
+            settings.get_profile("default"),
             backend="crosshair",
             max_examples=20,
             deadline=None,
