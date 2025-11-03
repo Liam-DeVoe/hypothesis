@@ -3,3 +3,16 @@
 html {
     scroll-behavior: auto;
 }
+
+/* fix readthedocs tooltip dark mode */
+@media (prefers-color-scheme: dark) {
+    body:not([data-theme="light"]) .tooltip-content {
+        background-color: var(--color-background-primary);
+        color: var(--color-foreground-primary);
+    }
+}
+
+body[data-theme="dark"] .tooltip-content {
+    background-color: var(--color-background-primary);
+    color: var(--color-foreground-primary);
+}
