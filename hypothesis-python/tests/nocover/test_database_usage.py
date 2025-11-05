@@ -8,6 +8,8 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
 
+from random import Random
+
 import pytest
 
 from hypothesis import assume, core, find, given, settings, strategies as st
@@ -18,7 +20,6 @@ from hypothesis.database import (
     ReadOnlyDatabase,
 )
 from hypothesis.errors import NoSuchExample, Unsatisfiable
-from hypothesis.internal.entropy import deterministic_PRNG
 
 from tests.common.utils import (
     Why,
@@ -97,19 +98,18 @@ def test_trashes_invalid_examples():
                 condition,
                 settings=settings(database=database),
                 database_key=key,
+                random=Random(0),
             )
         except (Unsatisfiable, NoSuchExample):
             pass
 
-    with deterministic_PRNG():
-        value = stuff()
+    value = stuff()
 
     original = len(all_values(database))
     assert original > 1
 
     invalid.add(value)
-    with deterministic_PRNG():
-        stuff()
+    stuff()
     assert len(all_values(database)) < original
 
 
@@ -135,17 +135,16 @@ def test_respects_max_examples_in_database_usage():
                 check,
                 settings=settings(database=database, max_examples=10),
                 database_key=key,
+                random=Random(0),
             )
         except NoSuchExample:
             pass
 
-    with deterministic_PRNG():
-        stuff()
+    stuff()
     assert len(all_values(database)) > 10
     do_we_care = False
     counter = 0
-    with deterministic_PRNG():
-        stuff()
+    stuff()
     assert counter == 10
 
 
