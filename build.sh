@@ -40,10 +40,9 @@ export PYTHONPATH="$ROOT/tooling/src"
 
 if ! "$TOOL_PYTHON" -m hypothesistooling check-installed ; then
   rm -rf "$TOOL_VIRTUALENV"
-  "$PYTHON" -m pip install --upgrade pip
-  "$PYTHON" -m pip install --upgrade virtualenv
+  "$PYTHON" -m pip install --upgrade uv virtualenv
   "$PYTHON" -m virtualenv "$TOOL_VIRTUALENV"
-  "$TOOL_PYTHON" -m pip install --no-warn-script-location -r requirements/tools.txt
+  "$PYTHON" -m uv pip install --python "$TOOL_PYTHON" -r requirements/tools.txt
 fi
 
 if [ -n "${CI:-}" ] ; then echo "::endgroup::" ; fi
