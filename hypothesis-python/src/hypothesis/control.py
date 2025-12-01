@@ -51,6 +51,7 @@ def reject() -> NoReturn:
 
 @overload
 def assume(condition: Literal[False] | None) -> NoReturn: ...
+
 @overload
 def assume(condition: object) -> Literal[True]: ...
 
