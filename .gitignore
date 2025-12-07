@@ -1,3 +1,7 @@
+# claude
+
+.claude/settings.local.json
+
 # mypyc
 
 *.so
