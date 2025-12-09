@@ -21,7 +21,6 @@ from types import SimpleNamespace
 from hypothesis import Phase, settings
 from hypothesis.errors import HypothesisDeprecationWarning
 from hypothesis.internal import observability
-from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.internal.floats import next_down
 from hypothesis.internal.observability import (
     Observation,
@@ -127,16 +126,8 @@ def fails_with(e, *, match=None):
     def accepts(f):
         @proxies(f)
         def inverted_test(*arguments, **kwargs):
-            # Most of these expected-failure tests are non-deterministic, so
-            # we rig the PRNG to avoid occasional flakiness. We do this outside
-            # the `raises` context manager so that any problems in rigging the
-            # PRNG don't accidentally count as the expected failure.
-            with deterministic_PRNG():
-                # NOTE: For compatibility with Python 3.9's LL(1)
-                # parser, this is written as a nested with-statement,
-                # instead of a compound one.
-                with raises(e, match=match):
-                    f(*arguments, **kwargs)
+            with raises(e, match=match):
+                f(*arguments, **kwargs)
 
         return inverted_test
 
@@ -153,7 +144,7 @@ class NotDeprecated(Exception):
 @contextlib.contextmanager
 def validate_deprecation():
 
-    if settings._current_profile == "threading":
+    if settings.get_current_profile_name() == "threading":
         import pytest
 
         if sys.version_info[:2] < (3, 14):
@@ -259,13 +250,9 @@ def temp_registered(type_, strat_or_factory):
 @contextlib.contextmanager
 def raises_warning(expected_warning, match=None):
     """Use instead of pytest.warns to check that the raised warning is handled properly"""
-    with raises(expected_warning, match=match) as r:
-        # NOTE: For compatibility with Python 3.9's LL(1)
-        # parser, this is written as a nested with-statement,
-        # instead of a compound one.
-        with warnings.catch_warnings():
-            warnings.simplefilter("error", category=expected_warning)
-            yield r
+    with raises(expected_warning, match=match) as r, warnings.catch_warnings():
+        warnings.simplefilter("error", category=expected_warning)
+        yield r
 
 
 @contextlib.contextmanager
@@ -308,11 +295,10 @@ def xfail_on_crosshair(why: Why, /, *, strict=True, as_marks=False):
     except ImportError:
         return lambda fn: fn
 
-    current_backend = settings.get_profile(settings._current_profile).backend
     kw = {
         "strict": strict and why != Why.undiscovered,
         "reason": f"Expected failure due to: {why.value}",
-        "condition": current_backend == "crosshair",
+        "condition": settings().backend == "crosshair",
     }
     if as_marks:  # for use with pytest.param(..., marks=xfail_on_crosshair())
         return (pytest.mark.xf_crosshair, pytest.mark.xfail(**kw))
@@ -326,7 +312,7 @@ def skipif_threading(f):
         return f
 
     return pytest.mark.skipif(
-        settings._current_profile == "threading", reason="not thread safe"
+        settings.get_current_profile_name() == "threading", reason="not thread safe"
     )(f)
 
 
@@ -360,10 +346,10 @@ def restore_recursion_limit():
             sys.setrecursionlimit(original_limit)
 
 
-def run_concurrently(function, n: int) -> None:
+def run_concurrently(function, *, n: int) -> None:
     import pytest
 
-    if settings._current_profile == "crosshair":
+    if settings.get_current_profile_name() == "crosshair":
         pytest.skip("crosshair is not thread safe")
     if sys.platform == "emscripten":
         pytest.skip("no threads on emscripten")

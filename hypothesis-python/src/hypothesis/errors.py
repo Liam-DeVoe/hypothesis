@@ -9,7 +9,7 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 
 from datetime import timedelta
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 from hypothesis.internal.compat import ExceptionGroup
 
@@ -28,7 +28,7 @@ class UnsatisfiedAssumption(HypothesisException):
     If you're seeing this error something has gone wrong.
     """
 
-    def __init__(self, reason: Optional[str] = None) -> None:
+    def __init__(self, reason: str | None = None) -> None:
         self.reason = reason
 
 
@@ -243,7 +243,9 @@ class DeadlineExceeded(_Trimmable):
     def __init__(self, runtime: timedelta, deadline: timedelta) -> None:
         super().__init__(
             f"Test took {runtime.total_seconds() * 1000:.2f}ms, which exceeds "
-            f"the deadline of {deadline.total_seconds() * 1000:.2f}ms"
+            f"the deadline of {deadline.total_seconds() * 1000:.2f}ms. If you "
+            "expect test cases to take this long, you can use @settings(deadline=...) "
+            "to either set a higher deadline, or to disable it with deadline=None."
         )
         self.runtime = runtime
         self.deadline = deadline

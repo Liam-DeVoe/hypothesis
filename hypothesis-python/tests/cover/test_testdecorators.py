@@ -263,7 +263,7 @@ def test_list_is_sorted(xs):
 @fails
 @given(floats(1.0, 2.0))
 def test_is_an_endpoint(x):
-    assert x == 1.0 or x == 2.0
+    assert x in {1.0, 2.0}
 
 
 def test_breaks_bounds():
@@ -470,12 +470,8 @@ def test_does_not_print_notes_if_all_succeed():
     def test(i):
         note("Hi there")
 
-    with capture_out() as out:
-        # NOTE: For compatibility with Python 3.9's LL(1)
-        # parser, this is written as a nested with-statement,
-        # instead of a compound one.
-        with reporting.with_reporter(reporting.default):
-            test()
+    with capture_out() as out, reporting.with_reporter(reporting.default):
+        test()
     assert not out.getvalue()
 
 
@@ -538,15 +534,12 @@ def test_notes_high_overrun_rates_in_unsatisfiable_error():
     def f(v):
         pass
 
-    with raises(
-        Unsatisfiable,
-        match=(
-            r"1000 of 1000 examples were too large to finish generating; "
-            r"try reducing the typical size of your inputs\?"
-        ),
+    match = (
+        r"1000 of 1000 examples were too large to finish generating; try "
+        r"reducing the typical size of your inputs\?"
+    )
+    with (
+        raises(Unsatisfiable, match=match),
+        buffer_size_limit(10),
     ):
-        # NOTE: For compatibility with Python 3.9's LL(1)
-        # parser, this is written as a nested with-statement,
-        # instead of a compound one.
-        with buffer_size_limit(10):
-            f()
+        f()
