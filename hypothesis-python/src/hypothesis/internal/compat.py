@@ -31,7 +31,7 @@ try:
     BaseExceptionGroup = BaseExceptionGroup
     ExceptionGroup = ExceptionGroup  # pragma: no cover
 except NameError:
-    from exceptiongroup import (
+    from exceptiongroup import (  # type: ignore[no-redef]
         BaseExceptionGroup as BaseExceptionGroup,
         ExceptionGroup as ExceptionGroup,
     )

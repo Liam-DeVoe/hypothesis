@@ -2471,7 +2471,10 @@ def register_type_strategy(
         )
     if (
         "pydantic.generics" in sys.modules
+        # fmt: off
         and issubclass(custom_type, sys.modules["pydantic.generics"].GenericModel)
+        # type: ignore[arg-type]
+        # fmt: on
         and not re.search(r"[A-Za-z_]+\[.+\]", repr(custom_type))
         and callable(strategy)
     ):  # pragma: no cover
@@ -2483,7 +2486,7 @@ def register_type_strategy(
             "directly for each parametrized form that you anticipate using."
         )
 
-    types._global_type_lookup[custom_type] = strategy
+    types._global_type_lookup[custom_type] = strategy  # type: ignore[index]
     from_type.__clear_cache()  # type: ignore
 
 
